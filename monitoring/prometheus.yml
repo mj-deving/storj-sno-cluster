@@ -1,0 +1,61 @@
+# Prometheus scrape configuration for the Storj SNO cluster
+# Template: replace every <PLACEHOLDER> with operator-specific values
+# Never validated against a live cluster; see ./README.md
+
+global:
+  scrape_interval: <EXAMPLE_SCRAPE_INTERVAL>s   # suggest 30
+  evaluation_interval: <EXAMPLE_EVAL_INTERVAL>s # suggest 30
+  external_labels:
+    cluster: <CLUSTER_LABEL>                    # e.g. "storj-sno"
+    operator: <OPERATOR_HANDLE>                 # e.g. "mjdeving"
+
+# ============================================================
+# Alertmanager target (operator-mesh interface, not public)
+# ============================================================
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - <ALERTMANAGER_HOST>:9093          # e.g. "10.0.0.1:9093"
+
+# ============================================================
+# Rule files
+# ============================================================
+
+rule_files:
+  - "alerts.yml"
+
+# ============================================================
+# Scrape configs
+# ============================================================
+
+scrape_configs:
+
+  # Host-level metrics from node-exporter on each storagenode host
+  # Mesh interface only (Wireguard / Tailscale), never public
+  - job_name: node-exporter
+    static_configs:
+      - targets:
+          - <NODE_HOST_1_MESH_IP>:9100          # e.g. "10.0.0.11:9100"
+          - <NODE_HOST_2_MESH_IP>:9100
+          # Add additional node hosts here, one per line
+
+  # Storagenode native metrics from each node's debug endpoint
+  # Use SSH tunnel or mesh interface; storagenode debug is loopback by default
+  - job_name: storagenode
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - <NODE_HOST_1_MESH_IP>:<DEBUG_PORT_1>  # e.g. "10.0.0.11:5999"
+          - <NODE_HOST_1_MESH_IP>:<DEBUG_PORT_2>  # e.g. "10.0.0.11:6000"
+          # Add additional debug ports here, one per node
+    # Storj metric names exposed by the storagenode debug endpoint
+    # change between releases; verify against your running version
+    # before tuning alerts in alerts.yml.
+
+  # Self-scrape for the Prometheus instance itself
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090

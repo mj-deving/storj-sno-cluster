@@ -1,0 +1,91 @@
+# Storj SNO multi-node compose template (reference, not a runtime)
+# See ./README.md for the framing header and bring-up instructions.
+#
+# Two-node example. Scale by duplicating the storagenode block and
+# bumping the suffix (storagenode-3, storagenode-4, ...). One identity
+# directory + one storage directory + one external port per node.
+
+name: storj-sno-cluster
+
+services:
+
+  # ============================================================
+  # Storage nodes (one block per node, scale by duplication)
+  # ============================================================
+
+  storagenode-1:
+    image: storjlabs/storagenode@sha256:21ca0ac819d1d66240830d28097eeb693923e51383aa3bb07bf823f9fad1f6e9
+    container_name: storagenode-1
+    restart: unless-stopped
+    user: "${UID}:${GID}"
+    stop_grace_period: 5m
+    ports:
+      - "${NODE_PORT_1}:28967/tcp"
+      - "${NODE_PORT_1}:28967/udp"
+      # Dashboard and debug bound to loopback only on host
+      - "127.0.0.1:${DASHBOARD_PORT_1}:14002"
+      - "127.0.0.1:${DEBUG_PORT_1}:5999"
+    environment:
+      WALLET: "${WALLET_ADDRESS}"
+      EMAIL: "${OPERATOR_EMAIL}"
+      ADDRESS: "${NODE_ADDRESS_1}:${NODE_PORT_1}"
+      STORAGE: "${STORAGE_ALLOCATION_1}"
+      SETUP: "false"
+    volumes:
+      - "${IDENTITY_DIR_1}:/app/identity"
+      - "${STORAGE_DIR_1}:/app/config"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  storagenode-2:
+    image: storjlabs/storagenode@sha256:21ca0ac819d1d66240830d28097eeb693923e51383aa3bb07bf823f9fad1f6e9
+    container_name: storagenode-2
+    restart: unless-stopped
+    user: "${UID}:${GID}"
+    stop_grace_period: 5m
+    ports:
+      - "${NODE_PORT_2}:28967/tcp"
+      - "${NODE_PORT_2}:28967/udp"
+      - "127.0.0.1:${DASHBOARD_PORT_2}:14002"
+      - "127.0.0.1:${DEBUG_PORT_2}:5999"
+    environment:
+      WALLET: "${WALLET_ADDRESS}"
+      EMAIL: "${OPERATOR_EMAIL}"
+      ADDRESS: "${NODE_ADDRESS_2}:${NODE_PORT_2}"
+      STORAGE: "${STORAGE_ALLOCATION_2}"
+      SETUP: "false"
+    volumes:
+      - "${IDENTITY_DIR_2}:/app/identity"
+      - "${STORAGE_DIR_2}:/app/config"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # ============================================================
+  # Host-level node-exporter (Prometheus scrapes this for host metrics)
+  # Bind to operator-mesh interface only via WG_INTERFACE_IP, never 0.0.0.0
+  # See HARDENING.md for the rationale
+  # ============================================================
+
+  node-exporter:
+    image: prom/node-exporter@sha256:4032c6d5bfd752342c3e631c2f1de93ba6b86c41db6b167b9a35372c139e7706
+    container_name: node-exporter
+    restart: unless-stopped
+    pid: host
+    ports:
+      - "${WG_INTERFACE_IP}:9100:9100"
+    volumes:
+      - "/proc:/host/proc:ro"
+      - "/sys:/host/sys:ro"
+      - "/:/rootfs:ro,rslave"
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+      - "--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$$"

@@ -23,8 +23,9 @@ collection.
 
 - A turnkey runtime. You bring your own hardware, IPs, and capital.
 - A guarantee of vetting outcome or earnings.
-- "Battle-tested" or "production-proven". This template has not been
-  operated as published.
+- A template that has been operated under sustained customer load.
+  It has not. The architecture is the deliverable, not a runtime
+  history.
 - Legal or tax advice. Consult a Steuerberater for actual filings.
 
 ## Target operator profile
@@ -57,10 +58,11 @@ storj-sno-cluster/
 Several of these files are stubs in the initial scaffold; expansion lands
 in subsequent commits, gated by ISC-tracked criteria in `ISA.md`.
 
-## Anchored on upstream
+## Prior art and credit
 
-This template assumes familiarity with the official Storj Storage Node
-documentation and ecosystem:
+The canonical attribution lives in [`ARCHITECTURE.md` § Prior art and
+credit](./ARCHITECTURE.md#prior-art-and-credit) with pinned upstream
+versions. Summary:
 
 - [storj/storagenode-docker](https://github.com/storj/storagenode-docker)
   is the auto-updating official container.
@@ -75,9 +77,9 @@ constrained where the upstream leaves the operator to choose.
 
 ## Author
 
-Marius Jauernik. mjdeving.com. Dipl.-Ing. electrical engineering
-(TU Dresden, 2018). Self-employed since 2022 in cloud infrastructure
-and full-stack development, now building AI agents and automations.
+[mjdeving](https://mjdeving.com). Dipl.-Ing. Elektrotechnik
+(TU Dresden, 2018). Self-employed since 2022 in cloud infrastructure,
+now building AI agents and automations.
 
 ## License
 

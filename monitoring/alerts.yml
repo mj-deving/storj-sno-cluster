@@ -1,0 +1,103 @@
+# Alert rules for the Storj SNO cluster
+# Template: PromQL expressions reference metric names exposed by the
+# storagenode debug endpoint; metric names change between Storj releases;
+# verify against your running version before enabling.
+# Thresholds are advisory; tune to operator preference.
+
+groups:
+
+  # ============================================================
+  # P1 alerts (page immediately, operator's wake-the-operator channel)
+  # ============================================================
+
+  - name: storj-sno-p1
+    rules:
+
+      - alert: NodeDown
+        expr: up{job="storagenode"} == 0
+        for: <EXAMPLE_FOR_DURATION>            # suggest 10m
+        labels:
+          severity: page
+          channel: <PAGE_CHANNEL>              # e.g. telegram-page
+        annotations:
+          summary: "Storagenode {{ $labels.instance }} down"
+          description: "Storagenode at {{ $labels.instance }} unreachable for more than the configured for-window."
+
+      - alert: SuspensionLow
+        # Replace <STORJ_SUSPENSION_METRIC> with the actual metric name
+        # exposed by your storagenode debug endpoint (verify in /metrics).
+        expr: <STORJ_SUSPENSION_METRIC> < <EXAMPLE_SUSPENSION_THRESHOLD>   # suggest 0.70
+        for: <EXAMPLE_FOR_DURATION>            # suggest 5m
+        labels:
+          severity: page
+          channel: <PAGE_CHANNEL>
+        annotations:
+          summary: "Suspension score below threshold on {{ $labels.instance }}"
+          description: "Recovery window is short; resolve cause before disqualification."
+
+      - alert: DiskFull
+        # Ratio of used to allocated; replace metric names with the
+        # exact names exposed by your storagenode version.
+        expr: (<STORJ_DISK_USED_METRIC> / <STORJ_DISK_ALLOCATED_METRIC>) > <EXAMPLE_DISK_FULL_THRESHOLD>   # suggest 0.95
+        for: <EXAMPLE_FOR_DURATION>            # suggest 5m
+        labels:
+          severity: page
+          channel: <PAGE_CHANNEL>
+        annotations:
+          summary: "Disk above threshold on {{ $labels.instance }}"
+          description: "Ingress stops at 100%; resolve allocation or expand storage."
+
+  # ============================================================
+  # P2 alerts (alert next morning, email or non-urgent channel)
+  # ============================================================
+
+  - name: storj-sno-p2
+    rules:
+
+      - alert: AuditScoreDeclining
+        expr: deriv(<STORJ_AUDIT_SCORE_METRIC>[<EXAMPLE_DERIV_WINDOW>]) < <EXAMPLE_DECLINE_THRESHOLD>   # suggest 15m window, threshold -0.001
+        for: <EXAMPLE_FOR_DURATION>            # suggest 30m
+        labels:
+          severity: warn
+          channel: <WARN_CHANNEL>              # e.g. email
+        annotations:
+          summary: "Audit score declining on {{ $labels.instance }}"
+          description: "Trending toward suspension; investigate disk health and audit failure logs."
+
+      - alert: ContainerRestartLoop
+        expr: changes(container_start_time_seconds{name=~"storagenode-.+"}[<EXAMPLE_RESTART_WINDOW>]) > <EXAMPLE_RESTART_COUNT>   # suggest 30m window, count 3
+        for: <EXAMPLE_FOR_DURATION>            # suggest 5m
+        labels:
+          severity: warn
+          channel: <WARN_CHANNEL>
+        annotations:
+          summary: "Container restart loop on {{ $labels.instance }}"
+          description: "More than the configured restart count within the configured window."
+
+      - alert: HostDiskPressure
+        expr: node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} < <EXAMPLE_HOST_PRESSURE_THRESHOLD>   # suggest 0.15
+        for: <EXAMPLE_FOR_DURATION>            # suggest 30m
+        labels:
+          severity: warn
+          channel: <WARN_CHANNEL>
+        annotations:
+          summary: "Host disk pressure on {{ $labels.instance }} ({{ $labels.mountpoint }})"
+          description: "Available space below threshold on host filesystem; outside storj data path."
+
+  # ============================================================
+  # P3 alerts (weekly digest only)
+  # ============================================================
+
+  - name: storj-sno-p3
+    rules:
+
+      - alert: EgressOutsideBaseline
+        # Compares current 24h egress rate to 7d baseline.
+        # Adjust the metric name and window to match your storagenode version.
+        expr: abs(rate(<STORJ_EGRESS_BYTES_METRIC>[1d]) - rate(<STORJ_EGRESS_BYTES_METRIC>[7d])) / rate(<STORJ_EGRESS_BYTES_METRIC>[7d]) > <EXAMPLE_DEVIATION_THRESHOLD>   # suggest 0.5
+        labels:
+          severity: info
+          channel: <DIGEST_CHANNEL>            # e.g. weekly-digest
+        annotations:
+          summary: "Egress on {{ $labels.instance }} outside 7-day baseline"
+          description: "Trend signal only; not an immediate action item."

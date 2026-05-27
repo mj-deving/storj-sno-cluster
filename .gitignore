@@ -1,9 +1,41 @@
+# OS
 .DS_Store
-.idea/
-.vscode/
-*.swp
+Thumbs.db
 *~
-node_modules/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Secrets, never commit
 .env
-.env.local
-compose/.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.crt
+*.p12
+
+# Docker
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# Storj identity and runtime, never commit
+identity/
+storagenode/
+data/
+
+# Build artifacts
+dist/
+build/
+node_modules/
+
+# Local working notes
+SCRATCH.md
+TODO.local.md
