@@ -20,7 +20,7 @@ apply.
 
 ## What this profile is not
 
-- A pen-test report (no live targets exist)
+- A pen-test report
 - A full CIS Benchmark walkthrough (use the upstream CIS Debian or
   Ubuntu profile for that surface)
 - A substitute for OS-level patching discipline

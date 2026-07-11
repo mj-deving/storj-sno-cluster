@@ -1,15 +1,14 @@
 # monitoring/
 
-> **Status:** Scaffolding only. Placeholders for endpoints, retention,
-> alert thresholds, and PromQL metric names. Never validated against
-> live metrics. Storj metric names exposed by the storagenode debug
-> endpoint change between releases; verify against your running
+> **Template.** Placeholders for endpoints, retention, alert thresholds,
+> and PromQL metric names. Storj metric names exposed by the storagenode
+> debug endpoint change between releases; verify against your running
 > version's `/metrics` output before tuning alerts or wiring panels.
 
 This directory contains a Prometheus configuration, alert rule
 definitions, and a minimal Grafana dashboard JSON for the Storj SNO
-cluster. None of the files are runnable as published; each contains
-`<PLACEHOLDER>` markers where operator-specific values belong.
+cluster. Each file contains `<PLACEHOLDER>` markers where
+operator-specific values belong.
 
 ## Files
 
@@ -23,24 +22,16 @@ Prometheus + Grafana containers themselves are out of scope for this
 template. Use the digest-pinned versions documented in `ARCHITECTURE.md`
 or the operator's existing observability stack.
 
-## Why template-only
+## Why the metric names and thresholds are placeholders
 
-Three reasons:
-
-1. **No live node exists to feed the stack.** Wiring dashboards against
-   no data source produces a "looks plausible" artifact that bears no
-   relationship to actual operations. Half-runnable monitoring is worse
-   than fully-template; the operator does not gain reliable signal from
-   a stack that was never observed against live data.
-2. **Storj metric names depend on the storagenode version.** The debug
-   endpoint exposes different metric names across releases; pinning
-   PromQL queries to a specific metric name at template-publication time
-   would mislead operators on newer versions.
-3. **Per-operator thresholds matter more than templates.** Alert
-   thresholds (when does a node count as "down"? what suspension score
-   triggers a page?) are operator-specific. The template provides the
-   structure (three tiers, named channels) but leaves the numbers to
-   the operator.
+- **Storj metric names depend on the storagenode version.** The debug
+  endpoint exposes different metric names across releases; pinning PromQL
+  queries to a specific metric name would mislead operators on newer
+  versions.
+- **Per-operator thresholds are operator-specific.** When a node counts
+  as "down" and what suspension score triggers a page vary by operator.
+  The template provides the structure (three tiers, named channels) and
+  leaves the numbers to the operator.
 
 ## Operator-side resolution checklist
 

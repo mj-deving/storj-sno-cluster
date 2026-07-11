@@ -1,12 +1,11 @@
 # compose/
 
-> **Status:** Template. YAML structure is valid and the pinned image
-> digests resolve on Docker Hub, but the stack has not been smoke-tested
-> by us under live operator load. Requires your own Storj node identity
-> and authorization token. Not operated by us. The storagenode image
-> digest is pinned at template-publication time; the container's
-> built-in auto-updater is allowed to roll the binary forward in line
-> with Storj's protocol releases (see ARCHITECTURE.md § Decision 2).
+> **Template.** The YAML structure is valid and the pinned image digests
+> resolve on Docker Hub. Requires your own Storj node identity and
+> authorization token. The storagenode image digest is pinned at
+> template-publication time; the container's built-in auto-updater is
+> allowed to roll the binary forward in line with Storj's protocol
+> releases (see ARCHITECTURE.md § Decision 2).
 
 This directory contains a Docker Compose template for an 8-to-10-node
 Storj SNO cluster on a single host (or scaled across multiple hosts

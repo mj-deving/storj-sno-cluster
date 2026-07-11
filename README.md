@@ -1,44 +1,27 @@
 # storj-sno-cluster
 
 An implementation-architecture reference for a multi-node Storj Storage
-Node operator setup, designed for DE-resident solo operators.
+Node operator setup run by a single operator.
 
-This repository is a reference artifact, not a production deployment.
-It documents the architecture, the trade-offs, the regulatory boundary,
-and the hardening defaults you would want if you were going to build
-this. No runtime statistics, no earnings claims.
-
-Part of the [operator-references](https://github.com/mj-deving/operator-references)
-collection.
+It documents the topology, the components, the data flow, the trade-offs,
+and the hardening defaults for a 1-to-10 node Storj SNO cluster.
 
 ## What this is
 
 - A reusable Docker Compose topology for a 1-to-10 node Storj SNO setup
 - Prometheus + Grafana monitoring stack configuration
-- Hardening checklist (UFW, fail2ban, SSH, AppArmor, unattended-upgrades)
-- DE-operator notes on Gewerbeanmeldung, §22 EStG taxation, vetting reality
-- Cross-architecture context via [operator-references/DOCTRINE.md](https://github.com/mj-deving/operator-references/blob/main/DOCTRINE.md)
+- A host hardening profile (UFW, fail2ban, SSH, AppArmor, unattended-upgrades)
 
-## What this is not
+## Target setup shape
 
-- A turnkey runtime. You bring your own hardware, IPs, and capital.
-- A guarantee of vetting outcome or earnings.
-- A template that has been operated under sustained customer load.
-  It has not. The architecture is the deliverable, not a runtime
-  history.
-- Legal or tax advice. Consult a Steuerberater for actual filings.
-
-## Target operator profile
-
-- DE-resident, registered Gewerbe (Einzelunternehmen acceptable)
-- 8-10 HDDs available across 4 distinct /24 subnets (home, second home,
-  colo, family member, regional VPS with attached storage)
-- 2-4 TB per node target (smaller nodes work; smaller nodes earn less)
+- 8-10 HDDs across 4 distinct /24 subnets (home, second home, colo,
+  family member, regional VPS with attached storage)
+- 2-4 TB per node target
 - Stable internet with port-forwarding (default Storj port 28967)
 - Hands-on with Linux, Docker, basic networking
 
-If you do not match this profile, the template is still readable, but
-the operational and regulatory framing is calibrated for that shape.
+The template is filesystem- and host-agnostic; the operational framing is
+calibrated for that cluster shape but the topology reads independently of it.
 
 ## Repository structure
 
@@ -47,16 +30,11 @@ storj-sno-cluster/
 ├── README.md          this file
 ├── ARCHITECTURE.md    topology, components, data flow
 ├── OPERATIONS.md      monitoring, alerting, backup, lifecycle
-├── HARDENING.md       security baseline applied at every layer
-├── DE-OPERATOR.md     regulatory perimeter, tax notes, disclaimers
+├── HARDENING.md       host security baseline applied at every layer
 ├── compose/           Docker Compose template and example env
 ├── monitoring/        Prometheus + Grafana config and dashboards
-├── ISA.md             Ideal State Articulation (project specification)
 └── LICENSE            MIT
 ```
-
-Several of these files are stubs in the initial scaffold; expansion lands
-in subsequent commits, gated by ISC-tracked criteria in `ISA.md`.
 
 ## Prior art and credit
 
@@ -77,9 +55,7 @@ constrained where the upstream leaves the operator to choose.
 
 ## Author
 
-[mjdeving](https://mjdeving.com). Dipl.-Ing. Elektrotechnik
-(TU Dresden, 2018). Self-employed since 2022 in cloud infrastructure,
-now building AI agents and automations.
+[mjdeving](https://mjdeving.com).
 
 ## License
 

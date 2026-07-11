@@ -1,20 +1,18 @@
 # ARCHITECTURE
 
 Implementation-architecture reference for an 8-to-10-node Storj Storage
-Node Operator (SNO) cluster operated by a single DE-resident operator.
-The document is opinionated. Every significant choice is followed by a
-named alternative and a one-line reason.
+Node Operator (SNO) cluster operated by a single operator. The document
+is opinionated. Every significant choice is followed by a named
+alternative and a one-line reason.
 
-> **Status:** Reference architecture. Not operated as published. The
-> compose template (`compose/`) is intended to start cleanly on a fresh
-> host; the monitoring stack (`monitoring/`) is template-only with
-> placeholder values that need operator-specific resolution before they
-> emit useful signal.
+The compose template (`compose/`) is intended to start cleanly on a fresh
+host; the monitoring stack (`monitoring/`) is template-only with
+placeholder values that need operator-specific resolution before they
+emit useful signal.
 
 ## Prior art and credit
 
-This template stands on three pieces of upstream work and a research
-vault on DePIN operator economics.
+This template stands on three pieces of upstream work.
 
 | Upstream                                                                 | Role                                                       | Pinned at draft |
 |--------------------------------------------------------------------------|------------------------------------------------------------|-----------------|
@@ -24,13 +22,6 @@ vault on DePIN operator economics.
 
 The storj/storagenode-updater container is intentionally omitted: as of
 2024 the updater is bundled into the storagenode image and runs in-band.
-
-A DePIN-operator decision-surface research vault (storj, akash, lido CSM,
-filecoin SP, helium, bittensor) lives in the operator's private notes
-and informs the choice to scope this artifact to the 8-to-10-node Storj
-case rather than the broader DePIN field. The companion umbrella
-repository [operator-references](https://github.com/mj-deving/operator-references)
-carries the cross-architecture comparison.
 
 ## 1. Topology
 
@@ -44,14 +35,15 @@ across 4 distinct /24 subnets, in 2 to 4 geographic locations.
 | Disk     | 2 TB usable                  | 4 to 8 TB usable             | Beyond 16 TB per node, vetting amortisation gets too slow vs replacement cost |
 | RAM      | 1 GB free                    | 2 GB free                    | Storj's working set is modest; surplus RAM is wasted |
 | CPU      | 1 modern core                | 1 to 2 modern cores          | Background-priority workload; over-provisioning helps only at peak repair |
-| Network  | 100 Mbit symmetric           | 250 Mbit+ symmetric          | Asymmetric uplinks throttle egress (the earning side) |
+| Network  | 100 Mbit symmetric           | 250 Mbit+ symmetric          | Asymmetric uplinks throttle egress |
 | Identity | 1 per node (irreplaceable)   | 1 per node, encrypted backup | See OPERATIONS.md §3       |
 
 ### IP and subnet diversification
 
-Storj's payout model rewards diversity. Multiple nodes behind the same
-/24 subnet count as one node for satellite-side traffic allocation. The
-operator therefore wants nodes spread across distinct subnets.
+Storj's traffic-allocation model rewards diversity. Multiple nodes behind
+the same /24 subnet count as one node for satellite-side traffic
+allocation. The operator therefore wants nodes spread across distinct
+subnets.
 
 Reference cluster layout:
 
@@ -66,7 +58,7 @@ crosses into infrastructure-as-second-job territory.
 
 ### Geographic distribution
 
-Geographic diversity matters less to Storj's payout model than IP
+Geographic diversity matters less to Storj's traffic allocation than IP
 diversity, but matters more to operational resilience. A single power
 outage or ISP incident can take down all nodes at one location. The
 reference targets 2 to 4 geographic locations.
@@ -176,14 +168,13 @@ agnostic; it mounts whatever directory the operator provides.
 
 ### Per-node disk size guidance
 
-- **Floor: 2 TB usable.** Below this, vetting amortisation never reaches
-  break-even on hardware cost.
+- **Floor: 2 TB usable.** Below this, a node fills so slowly that the
+  vetting period dominates its useful early life.
 - **Recommended: 4 to 8 TB usable.** The sweet spot. Vetting completes in
-  ~30 days; mature node revenue covers electricity + amortised hardware.
+  ~30 days and the node fills at a steady rate afterward.
 - **Ceiling: 16 TB usable.** Beyond this, the operator absorbs
-  oversized replacement-risk per node. Larger disks don't scale
-  earnings linearly; the Storj payout curve is roughly utilisation-
-  proportional.
+  oversized replacement-risk per node. Storj's fill rate is roughly
+  utilisation-proportional, so very large disks fill no faster.
 
 ## 4. Network ingress
 
@@ -273,7 +264,7 @@ suspension is short; the window after disqualification is zero.
 | Trigger     | A peer node went offline; satellites re-distribute its pieces to surviving nodes including yours |
 |-------------|------------------------------------------------------------------|
 | Signal      | Ingress traffic spike above baseline, often 5-to-10x for several hours |
-| Severity    | Cosmetic; this is paid traffic, take it                           |
+| Severity    | Cosmetic; this is normal traffic                                  |
 | Operator note | Don't tune alerts to fire on traffic spikes alone; spikes mean repair traffic, which is the network at work |
 
 ### Disk failure
@@ -292,60 +283,51 @@ up.
 
 ## 6. Capacity envelope
 
-The capacity envelope captures the realistic shape of earnings and
-storage utilisation over a node's life.
+The capacity envelope captures how storage utilisation moves over a
+node's life.
 
 ### Utilisation curve
 
-| Phase                | Time after authorization | Disk filled         | Earnings shape                  |
-|----------------------|--------------------------|---------------------|---------------------------------|
-| Vetting              | 0 to ~30 days            | Below 5% of allocation  | Near-zero                        |
-| Post-vetting ramp    | 1 to 6 months            | Growing 5 to 60%        | Slow ramp, dominated by ingress  |
-| Mature node          | 6 to 24 months           | 60 to 95%           | Stable, dominated by egress      |
-| Saturated node       | 24+ months               | 95 to 100% then plateau | Egress-dominated, no new ingress |
+| Phase                | Time after authorization | Disk filled             | Traffic shape                     |
+|----------------------|--------------------------|-------------------------|-----------------------------------|
+| Vetting              | 0 to ~30 days            | Below 5% of allocation  | Reduced; ingress-only             |
+| Post-vetting ramp    | 1 to 6 months            | Growing 5 to 60%        | Ingress-dominated                 |
+| Mature node          | 6 to 24 months           | 60 to 95%               | Egress-dominated                  |
+| Saturated node       | 24+ months               | 95 to 100% then plateau | Egress-dominated, no new ingress  |
 
-The plateau is the operating regime: a saturated node earns from egress
-of stored pieces and from held-storage accumulation, while new ingress
-goes to nodes that still have headroom.
+The plateau is the operating regime: a saturated node serves egress of
+stored pieces while new ingress goes to nodes that still have headroom.
 
-### Vetting-period yield
+### Vetting-period behaviour
 
 | Aspect | Value |
 |---|---|
 | Satellite traffic share during vetting | Under 5% of vetted-node baseline |
 | Expected vetting duration              | Roughly 30 days per satellite under stable uptime |
-| Expected earnings during vetting       | Near zero; treat as cost of entry |
-| Hardware payback start                 | Month 3 to month 6 from authorization, depending on hardware cost |
+| Requirement to complete vetting        | Node online, passing a sufficient volume of audit requests |
 
 ### Traffic shape post-vetting
 
-| Traffic type    | Approximate share of earnings | Note                                                  |
-|-----------------|-------------------------------|-------------------------------------------------------|
-| Egress          | 60 to 80%                     | The dominant revenue lever; customer downloads        |
-| Held-storage    | 15 to 30%                     | Per-TB-month accrued; rises with stored piece count   |
-| Ingress         | 5 to 15%                      | Per-byte uploaded; matters more during fill phase     |
-| Repair          | Variable                      | Spikes when peer nodes fail; not a steady revenue line |
+| Traffic type    | Approximate share of traffic | Note                                                   |
+|-----------------|------------------------------|--------------------------------------------------------|
+| Egress          | 60 to 80%                    | Customer downloads; the dominant traffic type          |
+| Held-storage    | 15 to 30%                    | Per-TB-month; rises with stored piece count            |
+| Ingress         | 5 to 15%                     | Customer uploads; matters more during fill phase       |
+| Repair          | Variable                     | Spikes when peer nodes fail; not a steady line         |
 
-The exact shares depend on Storj's customer mix at the time. The
-operator does not control this. Track actuals against this envelope
-quarterly; deviation outside the bands signals either a problem or a
-network-level shift worth understanding.
+The exact shares depend on Storj's customer mix at the time; the operator
+does not control this. Track actuals against this envelope quarterly;
+deviation outside the bands signals either a problem or a network-level
+shift worth understanding.
 
 ### Per-cluster capacity context
 
 For an 8-to-10 node cluster targeting 4 to 8 TB per node:
 
-| Metric                              | Range                          |
-|-------------------------------------|--------------------------------|
-| Total allocated storage              | 32 to 80 TB                    |
-| Expected steady-state utilisation    | 60 to 95% (19 to 76 TB filled) |
-| Approximate steady-state egress       | Operator-specific; tracking required |
-| Approximate steady-state revenue (post-vetting) | Operator-specific; see DE-OPERATOR.md §4 |
-
-No earnings numbers ship in this document. Revenue depends on Storj's
-customer mix, EUR-USD rate, electricity cost in the operator's region,
-and hardware cost. Operators forecast against their actuals after the
-first vetted quarter.
+| Metric                            | Range                          |
+|-----------------------------------|--------------------------------|
+| Total allocated storage           | 32 to 80 TB                    |
+| Expected steady-state utilisation | 60 to 95% (19 to 76 TB filled) |
 
 ## 7. Trade-off decisions
 
@@ -432,14 +414,8 @@ property for a one-person operation.
 
 - Operations rhythm and SLO: [OPERATIONS.md](./OPERATIONS.md)
 - Host-side hardening profile: [HARDENING.md](./HARDENING.md)
-- DE regulatory perimeter: [DE-OPERATOR.md](./DE-OPERATOR.md)
-- Compose template + framing: [compose/README.md](./compose/README.md)
-- Monitoring template + framing: [monitoring/README.md](./monitoring/README.md)
-- Cross-architecture context (Storj vs Akash vs CSM):
-  [operator-references/DOCTRINE.md](https://github.com/mj-deving/operator-references/blob/main/DOCTRINE.md)
-- DePIN-operator decision-surface comparison:
-  [operator-references/COMPARISON.md](https://github.com/mj-deving/operator-references/blob/main/COMPARISON.md)
-  (in flight at v0.1; ships in a later commit)
+- Compose template: [compose/README.md](./compose/README.md)
+- Monitoring template: [monitoring/README.md](./monitoring/README.md)
 
 ## Open questions for v0.2
 

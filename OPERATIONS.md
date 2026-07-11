@@ -22,7 +22,6 @@ one operator.
 
 - A fleet-operations runbook (no shift handoffs, no incident-commander
   protocol; a solo operator does not run a NOC)
-- A guarantee of any particular earnings level
 - A substitute for the Storj forum and docs when a node misbehaves;
   the community there is the operational ground truth
 
@@ -45,8 +44,8 @@ Three categories of signal, in priority order.
 
 ### Category B: workload signal (watch trend, not single values)
 
-- **Egress traffic.** Customer downloads, the dominant earnings
-  driver after vetting.
+- **Egress traffic.** Customer downloads, the dominant traffic type
+  after vetting.
 - **Ingress traffic.** Customer uploads plus repair traffic.
 - **Pieces stored.** Total piece count per node and per satellite.
 - **GC (garbage collection) progress.** Garbage collection cycles
@@ -166,7 +165,7 @@ satellite).
 
 - Expected duration: roughly 30 days per satellite under stable
   conditions
-- Earnings near zero; this is the cost of entry
+- Traffic share is under 5% of a vetted node during this phase
 - Operator's job: keep the node up. Single outages over a few hours
   extend the vetting period
 
@@ -177,11 +176,11 @@ on the dashboard).
 
 The node receives full traffic from vetted satellites.
 
-- Earnings ramp over the next several months as storage fills
+- Storage fills over the next several months
 - Operator's job shifts to maintenance: patches, log review,
   monitoring trend analysis, occasional database compactions
-- The node compounds: existing pieces accrue held storage rewards;
-  new ingress adds to the held-storage base
+- Traffic settles into its steady state: egress from stored pieces
+  dominates, new ingress adds to the stored base
 
 ### Stage 4: suspension recovery (only if triggered)
 
@@ -228,14 +227,11 @@ container can be removed.
 
 ### Monthly (2 hours)
 
-- Reconcile earnings vs estimate; track per-node EUR receipts
 - Patch hosts (unattended-upgrades handles security; the operator
   handles minor-version OS upgrades manually)
 - Review the suspension and audit score trends month-over-month
 - Restore-drill one node's identity to a throwaway host (rotate
   which node each month)
-- Settle any STORJ-to-EUR conversions and record in the bookkeeping
-  set (see `DE-OPERATOR.md` section 6)
 
 ### Quarterly (half a day)
 
@@ -243,8 +239,7 @@ container can be removed.
   `VACUUM`)
 - Re-evaluate hardware: aging disks above 50,000 power-on hours,
   warranty status, replacement budget
-- Review the per-node profitability; decommission unprofitable nodes
-  via graceful exit
+- Decommission any node you no longer want to run via graceful exit
 
 ## 6. What this profile deliberately omits
 
@@ -255,9 +250,6 @@ container can be removed.
   thresholds reflect this.
 - Cross-operator coordination. Each operator runs their own
   infrastructure; this is by Storj's design.
-- Earnings forecasting and rate analysis. Earnings are a function of
-  Storj's customer base and network competition, neither of which
-  the operator controls. Track actuals, not forecasts.
 
 ## 7. References
 
