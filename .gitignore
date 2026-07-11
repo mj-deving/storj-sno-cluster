@@ -39,3 +39,6 @@ node_modules/
 # Local working notes
 SCRATCH.md
 TODO.local.md
+
+# Internal project spec, not part of the public architecture reference
+ISA.md
